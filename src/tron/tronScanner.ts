@@ -8,7 +8,7 @@ const tronweb = new TronWeb({
 });
 
 function parseAmount(raw: string): string {
-  return (parseFloat(raw) / 1_000_000).toFixed(6); // USDT 精度是 6
+  return (parseFloat(raw) / 1_000_000).toFixed(6);
 }
 
 export async function scanUSDTTransfers() {
@@ -29,7 +29,6 @@ export async function scanUSDTTransfers() {
       orders.set(data.amount, id);
     }
   }
-  console.log(`[SCAN] Found ${events.length} new USDT transfers`);
 
   for (const event of events) {
     const recipient = `${event.result.to}`; // hex
@@ -42,7 +41,7 @@ export async function scanUSDTTransfers() {
     if (orderId) {
       console.log(`[MATCHED] ${amount} received for order ${orderId}`);
       await markOrderStatus(orderId, "paid");
-      orders.delete(amount); // 避免重复处理
+      orders.delete(amount);
     }
   }
 }

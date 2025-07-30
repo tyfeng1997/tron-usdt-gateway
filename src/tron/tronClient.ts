@@ -1,5 +1,4 @@
 import axios from "axios";
-import { formatISO } from "date-fns";
 const USDT_CONTRACT = process.env.TRON_USDT_ADDRESS;
 const BASE_URL = process.env.TRONGRID_BASE_URL;
 const TRONGRID_API_KEY = process.env.TRONGRID_API_KEY;
@@ -12,13 +11,10 @@ const axiosInstance = axios.create({
 });
 
 export async function fetchUSDTTransfers() {
-  // const minTimeISO = formatISO(new Date(sinceTimestamp));
-
   const res = await axiosInstance.get(`/v1/contracts/${USDT_CONTRACT}/events`, {
     params: {
       event_name: "Transfer",
       only_confirmed: true,
-      // min_block_timestamp: minTimeISO,
       order_by: "block_timestamp,desc",
       limit: 200,
     },
