@@ -17,7 +17,8 @@ export async function scanUSDTTransfers() {
   if (!events.length) return;
 
   const pendingIds = await redis.zrange("pending_orders", 0, -1);
-  const orders = new Map<string, string>(); // amount -> orderId
+  const orders = new Map<string, { id: string; createdAt: number }>(); // amount -> orderId
+  let minOrderTimestamp = Number.MAX_SAFE_INTEGER;
 
   for (const id of pendingIds) {
     const data = await redis.hgetall(`order:${id}`);
@@ -26,22 +27,30 @@ export async function scanUSDTTransfers() {
     );
 
     if (data.status === "pending") {
-      orders.set(data.amount, id);
+      const createdAt = parseInt(data.createdAt);
+      orders.set(data.amount, { id, createdAt });
+      if (createdAt < minOrderTimestamp) {
+        minOrderTimestamp = createdAt;
+      }
     }
   }
+  if (orders.size === 0) return;
 
   for (const event of events) {
-    const recipient = `${event.result.to}`; // hex
-    const recipientAddress = tronweb.address.fromHex(recipient);
+    const txTimestamp = event.block_timestamp;
+    if (txTimestamp < minOrderTimestamp) continue;
+
+    const hexAddress = event.result.to;
+    const recipientAddress = tronweb.address.fromHex(hexAddress);
     if (recipientAddress !== MY_WALLET_ADDRESS) continue;
 
     const amount = parseAmount(event.result.value);
-    const orderId = orders.get(amount);
+    const orderMatch = orders.get(amount);
 
-    if (orderId) {
-      console.log(`[MATCHED] ${amount} received for order ${orderId}`);
-      await markOrderStatus(orderId, "paid");
-      orders.delete(amount);
+    if (orderMatch && txTimestamp >= orderMatch.createdAt) {
+      console.log(`[MATCHED] ${amount} received for order ${orderMatch.id}`);
+      await markOrderStatus(orderMatch.id, "paid");
+      orders.delete(amount); // 防止重复处理
     }
   }
 }

@@ -13,6 +13,7 @@ const axiosInstance = axios.create({
 export async function fetchUSDTTransfers() {
   const res = await axiosInstance.get(`/v1/contracts/${USDT_CONTRACT}/events`, {
     params: {
+      // min_block_timestamp: Date.now() - 60 * 1000 * 15,
       event_name: "Transfer",
       only_confirmed: true,
       order_by: "block_timestamp,desc",

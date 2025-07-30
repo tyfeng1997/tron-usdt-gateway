@@ -19,13 +19,11 @@ const tronweb = new TronWeb({
   fullHost: BASE_URL,
 });
 export async function fetchUSDTTransfers() {
-  // const minTimeISO = formatISO(new Date(sinceTimestamp));
-
   const res = await axiosInstance.get(`/v1/contracts/${USDT_CONTRACT}/events`, {
     params: {
       event_name: "Transfer",
       only_confirmed: true,
-      // min_block_timestamp: minTimeISO,
+      min_block_timestamp: Date.now() - 60 * 1000 * 15,
       order_by: "block_timestamp,desc",
       limit: 200,
     },
