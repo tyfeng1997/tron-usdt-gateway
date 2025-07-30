@@ -2,10 +2,10 @@ import { redis } from "../redis/redisClient";
 import { v4 as uuidv4 } from "uuid";
 import QRCode from "qrcode";
 import { sendWebhook } from "../webhook/webhookService";
-const BASE_ADDRESS = "TUSDTxxxxxxxxxxxxxxxxxxxxxx";
+const MY_WALLET_ADDRESS = process.env.MY_WALLET_ADDRESS;
 const ORDER_TTL = 15 * 60; // 15分钟
 const AMOUNT_PRECISION = 6;
-const webhookUrl = process.env.WEBHOOK_URL || "http://localhost:4000/webhook";
+const webhookUrl = process.env.WEBHOOK_URL;
 
 function padAmount(base: number, index: number): string {
   return (base + index * 0.000001).toFixed(AMOUNT_PRECISION);
@@ -36,7 +36,7 @@ export async function createOrder(baseAmount: number, customOrderId?: string) {
   const order = {
     orderId,
     amount: uniqueAmount,
-    address: BASE_ADDRESS,
+    address: MY_WALLET_ADDRESS,
     status: "pending",
     createdAt: now,
   };
@@ -45,7 +45,7 @@ export async function createOrder(baseAmount: number, customOrderId?: string) {
   await redis.expire(`order:${orderId}`, ORDER_TTL);
   await redis.zadd("pending_orders", now, orderId);
 
-  const qrCodeUrl = await QRCode.toDataURL(`${BASE_ADDRESS}:${uniqueAmount}`);
+  const qrCodeUrl = await QRCode.toDataURL(`${MY_WALLET_ADDRESS}`);
   console.log(
     webhookUrl,
     `[Order] Created order ${orderId} with amount ${uniqueAmount}`

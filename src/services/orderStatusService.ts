@@ -1,7 +1,7 @@
 import { redis } from "../redis/redisClient";
 import { sendWebhook } from "../webhook/webhookService";
 
-const webhookUrl = process.env.WEBHOOK_URL || "http://localhost:4000/webhook";
+const webhookUrl = process.env.WEBHOOK_URL;
 
 export async function markOrderStatus(
   orderId: string,
