@@ -1,17 +1,18 @@
 import { fetchUSDTTransfers } from "./tronClient";
 import { redis } from "../redis/redisClient";
 import { markOrderStatus } from "../services/orderStatusService";
-
+import { TronWeb } from "tronweb";
 const MY_WALLET_ADDRESS = process.env.MY_WALLET_ADDRESS;
-let lastScanTimestamp = Date.now() - 60_000;
+const tronweb = new TronWeb({
+  fullHost: process.env.TRONGRID_BASE_URL,
+});
 
 function parseAmount(raw: string): string {
   return (parseFloat(raw) / 1_000_000).toFixed(6); // USDT 精度是 6
 }
 
 export async function scanUSDTTransfers() {
-  const events = await fetchUSDTTransfers(lastScanTimestamp);
-  lastScanTimestamp = Date.now();
+  const events = await fetchUSDTTransfers();
 
   if (!events.length) return;
 
@@ -20,6 +21,10 @@ export async function scanUSDTTransfers() {
 
   for (const id of pendingIds) {
     const data = await redis.hgetall(`order:${id}`);
+    console.log(
+      `[SCAN] Order ${id} status: ${data.status}, amount: ${data.amount} ,address: ${data.address}`
+    );
+
     if (data.status === "pending") {
       orders.set(data.amount, id);
     }
@@ -27,8 +32,9 @@ export async function scanUSDTTransfers() {
   console.log(`[SCAN] Found ${events.length} new USDT transfers`);
 
   for (const event of events) {
-    const recipient = `T${event.result.to}`; // addressBase58
-    if (recipient !== MY_WALLET_ADDRESS) continue;
+    const recipient = `${event.result.to}`; // hex
+    const recipientAddress = tronweb.address.fromHex(recipient);
+    if (recipientAddress !== MY_WALLET_ADDRESS) continue;
 
     const amount = parseAmount(event.result.value);
     const orderId = orders.get(amount);

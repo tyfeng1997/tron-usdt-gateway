@@ -1,9 +1,8 @@
 import axios from "axios";
-
+import { formatISO } from "date-fns";
 const USDT_CONTRACT = process.env.TRON_USDT_ADDRESS;
 const BASE_URL = process.env.TRONGRID_BASE_URL;
 const TRONGRID_API_KEY = process.env.TRONGRID_API_KEY;
-console.log(BASE_URL, TRONGRID_API_KEY, USDT_CONTRACT);
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
   headers: {
@@ -12,21 +11,18 @@ const axiosInstance = axios.create({
   },
 });
 
-export async function fetchUSDTTransfers(sinceTimestamp: number) {
+export async function fetchUSDTTransfers() {
+  // const minTimeISO = formatISO(new Date(sinceTimestamp));
+
   const res = await axiosInstance.get(`/v1/contracts/${USDT_CONTRACT}/events`, {
     params: {
       event_name: "Transfer",
       only_confirmed: true,
-      limit: 100,
-      min_timestamp: sinceTimestamp,
-      sort: "block_timestamp,asc",
+      // min_block_timestamp: minTimeISO,
+      order_by: "block_timestamp,desc",
+      limit: 200,
     },
   });
-  console.log(
-    `[TRON] Fetched ${res.data.data.length} USDT transfers since ${new Date(
-      sinceTimestamp
-    ).toISOString()}`
-  );
 
   return res.data.data;
 }
