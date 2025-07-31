@@ -6,8 +6,11 @@ import orderRoutes from "./api/order";
 import { cleanExpiredOrders } from "./services/cleanExpiredOrders";
 import { scanUSDTTransfers } from "./tron/tronScanner";
 import { redis } from "./redis/redisClient";
+import cors from "cors";
 
 const app = express();
+app.use(cors());
+
 const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
